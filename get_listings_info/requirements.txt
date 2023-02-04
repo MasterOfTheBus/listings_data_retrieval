@@ -1,0 +1,2 @@
+# Ignore boto3 because we are deploying to AWS Lambda
+requests
