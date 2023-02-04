@@ -8,3 +8,6 @@ Retrieves data from alphavantage for a specific symbol
 
 ## rate_checker
 A utility script that helps check rate request limit for alpha vantage
+
+## Future Tasks
+* Containers instead of zips?
