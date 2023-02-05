@@ -20,11 +20,15 @@ def handler(event, context):
         else:
             today = date.today().isoformat()
             ddb.update_item(TableName=table, Key={'Type': {'S': 'daily'}},
-                            AttributeUpdates={
-                                'Day': {'Value': {'S': today}},
-                                'Count': {'Value': {'N': '0'}},
-                                'Action': 'PUT'
-                            })
+                            ExpressionAttributeNames={
+                                '#D': 'Day',
+                                '#C': 'Count'
+                            },
+                            ExpressionAttributeValues={
+                                ':day': {'S': today},
+                                ':count': {'N': '0'}
+                            },
+                            UpdateExpression='SET #D=:day, #C=:count')
             print(f'reset count to 0, day to {today}')
 
     return {'wait': False}
