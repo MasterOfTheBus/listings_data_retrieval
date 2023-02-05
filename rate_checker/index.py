@@ -2,12 +2,11 @@ import boto3
 import os
 from datetime import date
 
-ddb = boto3.client('dynamodb')
-table = os.environ['table']
-daily_limit = os.environ['daily_limit']
-
 
 def handler(event, context):
+    ddb = boto3.client('dynamodb')
+    table = os.environ['table']
+    daily_limit = os.environ['daily_limit']
 
     response = ddb.get_item(TableName=table, Key={
         'Type': {'S': 'daily'}
@@ -16,11 +15,21 @@ def handler(event, context):
     count = response['Item']['Count']['N']
 
     if count >= daily_limit:
-        count_date = date.fromisoformat(day)
-        print(count_date)
-        if count_date >= date.today():
+        if current_day_before_or_equals_saved_date(day):
             return {'wait': True}
         else:
-            print('reset count to 0')
+            today = date.today().isoformat()
+            ddb.update_item(TableName=table, Key={'Type': {'S': 'daily'}},
+                            AttributeUpdates={
+                                'Day': {'Value': {'S': today}},
+                                'Count': {'Value': {'N': '0'}},
+                                'Action': 'PUT'
+                            })
+            print(f'reset count to 0, day to {today}')
 
     return {'wait': False}
+
+
+def current_day_before_or_equals_saved_date(saved_date_str):
+    saved_date = date.fromisoformat(saved_date_str)
+    return saved_date >= date.today()

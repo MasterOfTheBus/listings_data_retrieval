@@ -7,3 +7,5 @@ get_listings_info lambda makes 5 requests at a time so check requests in a day
 run `make build` to package the dependencies into a `package.zip` archive
 
 run `make clean` to delete the generated artifacts
+
+run `make test` to run unit tests

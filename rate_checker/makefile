@@ -3,3 +3,6 @@ build :
 
 clean :
 	rm -rf package.zip
+
+test :
+	python -m unittest
