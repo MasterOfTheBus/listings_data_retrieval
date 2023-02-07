@@ -1,6 +1,5 @@
 import boto3
 import os
-import csv
 
 
 def handler(event, context):
@@ -9,32 +8,31 @@ def handler(event, context):
     bucket = os.environ['bucket']
     queue = os.environ['queue']
 
-    filename = 'temp_file.csv'
     response = s3.get_object(Bucket=bucket, Key='listings.csv')
-    with open(filename, 'wb') as f:
-        f.write(response['body'].read())
+    byte_data = response['Body'].read()
+    str_data = byte_data.decode('utf-8')
+    rows_data = str_data.split('\n')
 
-    with open(filename, 'r') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            symbol = row['symbol']
-            if should_ignore_row(row):
-                print(f'ignoring symbol={symbol}, name={row["name"]}')
-            else:
-                print(f'queuing symbol={symbol}')
-                msg = {'symbol': symbol}
-                response = sqs.get_queue_url(QueueName=queue)
-                queueUrl = response['QueueUrl']
-                sqs.send_message(QueueUrl=queueUrl, MessageBody=msg)
+    # Ignore the header row
+    for row_str in rows_data[1:]:
+        row = row_str.split(',')
+        symbol = row[0]
+        name = row[1]
+        if should_ignore_row(symbol, name):
+            print(f'ignoring symbol={symbol}, name={name}')
+        else:
+            print(f'queuing symbol={symbol}')
+            msg = '{"symbol": "%s"}' % (symbol)
+            response = sqs.get_queue_url(QueueName=queue)
+            queueUrl = response['QueueUrl']
+            sqs.send_message(QueueUrl=queueUrl, MessageBody=msg)
 
     return {
         "success": True
     }
 
 
-def should_ignore_row(row):
-    symbol = row['symbol']
-    name = row['name']
+def should_ignore_row(symbol, name):
     return '-' in symbol \
         or '- Units' in name \
         or '- Warrants' in name \
