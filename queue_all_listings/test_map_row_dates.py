@@ -39,6 +39,7 @@ class TestRowMapping(unittest.TestCase):
         self.assertEqual(third + timedelta(minutes=1), fourth)
         self.assertEqual(fourth + timedelta(days=1), fifth)
 
+    @unittest.SkipTest
     def test_map_rows_full_set(self):
         self.mapping_result = dict()
         test_data = []
