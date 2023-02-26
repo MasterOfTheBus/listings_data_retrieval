@@ -1,3 +1,5 @@
+# ---DEPRECATED---
+
 Compares against the number of requests made in a day and returns whether rate has been reached.
 
 AlphaVantage has 500 requests in a day and 5 requests in a minute limit.
