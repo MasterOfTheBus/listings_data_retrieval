@@ -3,7 +3,9 @@ import requests
 import os
 
 s3 = boto3.client('s3')
+ddb = boto3.client('dynamodb')
 bucket = os.environ['bucket']
+table = os.environ['table']
 api_key = os.environ['apiKey']
 base_url = 'https://www.alphavantage.co'
 query_types = [
@@ -18,6 +20,11 @@ def handler(event, context):
             get_query_type_and_store(type=type, listing=event['listing'])
         except RuntimeError:
             raise
+
+    ddb.update_item(TableName=table, Key={'Type': {'S': 'daily'}},
+                    ExpressionAttributeNames={'#C': 'Count'},
+                    ExpressionAttributeValues={':count': {'N': '5'}},
+                    UpdateExpression='SET #C=#C+:count')
 
     return {
         "success": True
