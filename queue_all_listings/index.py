@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 
 s3 = boto3.client('s3')
 events = boto3.client('events')
-lambda_arn = ''
-role_arn = ''
 
 
 def handler(event, context):
@@ -14,10 +12,6 @@ def handler(event, context):
     minute_limit = os.environ['minute_limit']
     # Should be divisible by minute_limit. Default will be 500
     day_limit = os.environ['day_limit']
-    global lambda_arn
-    global role_arn
-    lambda_arn = os.environ['lambda_arn']  # Terraform or CDK would be nice
-    role_arn = os.environ['role_arn']  # Terraform or CDK would be nice
 
     response = s3.get_object(Bucket=bucket, Key='listings.csv')
     byte_data = response['Body'].read()
@@ -78,14 +72,6 @@ def create_schedule(symbol, day_time):
     events.put_rule(Name=symbol,
                     ScheduleExpression=f'cron({datetime_to_cron(day_time)})',
                     State='ENABLED')
-    # For Lambda resources, EventBridge relies on resource-based policies
-    events.put_targets(Rule=symbol, Targets=[
-        {
-            'Id': symbol,
-            'Arn': lambda_arn,
-            'RoleArn': role_arn
-        }
-    ])
 
 
 def datetime_to_cron(day_time):
