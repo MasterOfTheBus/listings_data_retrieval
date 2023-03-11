@@ -3,12 +3,13 @@ import os
 from datetime import datetime, timedelta
 
 s3 = boto3.client('s3')
-events = boto3.client('events')
 lambda_arn = ''
 role_arn = ''
 
 
 def handler(event, context):
+    global scheduler
+    scheduler = boto3.client('scheduler')
     bucket = os.environ['bucket']
     # Default will be 5
     minute_limit = os.environ['minute_limit']
@@ -75,19 +76,15 @@ def should_ignore_row(symbol, name, type):
 
 
 def create_schedule(symbol, day_time):
-    events.put_rule(Name=symbol,
-                    ScheduleExpression=f'cron({datetime_to_cron(day_time)})',
-                    State='ENABLED')
-    # For Lambda resources, EventBridge relies on resource-based policies
-    events.put_targets(Rule=symbol, Targets=[
-        {
-            'Id': symbol,
-            'Arn': lambda_arn,
-            'RoleArn': role_arn
-        }
-    ])
+    schedule = datetime_to_cron(day_time)
+    scheduler.create_schedule(Name=symbol,
+                              ScheduleExpression=f'cron({schedule})',
+                              Target={'Arn': lambda_arn,
+                                      'Input': {'listing': symbol}},
+                              RoleArn=role_arn,
+                              FlexibleTimeWindow={'Mode': 'OFF'})
 
 
 def datetime_to_cron(day_time):
     # Minutes Hours DayOfMonth Month DayOfWeek Year
-    return day_time.strftime('%M %H %d %m ? %Y')
+    return day_time.strftime('%M %H %d %m ? *')
