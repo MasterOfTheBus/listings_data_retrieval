@@ -2,11 +2,9 @@ import boto3
 import os
 from datetime import datetime, timedelta
 
-s3 = boto3.client('s3')
-events = boto3.client('events')
-
 
 def handler(event, context):
+    s3 = boto3.client('s3')
     bucket = os.environ['bucket']
     # Default will be 5
     minute_limit = os.environ['minute_limit']
@@ -19,7 +17,7 @@ def handler(event, context):
     rows_data = str_data.split('\n')
 
     map_symbol_to_date(row_data=rows_data, daily_limit=day_limit,
-                       minute_limit=minute_limit, handler=create_schedule)
+                       minute_limit=minute_limit)  # TODO: Handler
 
     return {
         "success": True
@@ -66,14 +64,3 @@ def should_ignore_row(symbol, name, type):
         or '- Warrants' in name \
         or 'Acquisition' in name \
         or 'TEST' in name
-
-
-def create_schedule(symbol, day_time):
-    events.put_rule(Name=symbol,
-                    ScheduleExpression=f'cron({datetime_to_cron(day_time)})',
-                    State='ENABLED')
-
-
-def datetime_to_cron(day_time):
-    # Minutes Hours DayOfMonth Month DayOfWeek Year
-    return day_time.strftime('%M %H %d %m ? %Y')
