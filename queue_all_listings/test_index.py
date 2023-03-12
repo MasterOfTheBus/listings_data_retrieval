@@ -2,7 +2,7 @@ import unittest
 from index import should_ignore_row
 
 
-class TestDateComparison(unittest.TestCase):
+class TestIgnoreRow(unittest.TestCase):
 
     def test_should_ignore_row(self):
         self.assertEqual(should_ignore_row(
