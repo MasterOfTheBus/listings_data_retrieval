@@ -14,8 +14,8 @@ class TestMessageHandling(unittest.TestCase):
 
         def send(entries):
             self.assertEqual(len(entries), 2)
-            self.assertEqual(entries[0]['MessageBody'], 'a')
-            self.assertEqual(entries[1]['MessageBody'], 'b')
+            self.assertEqual(entries[0]['Body'], 'a')
+            self.assertEqual(entries[1]['Body'], 'b')
 
         should_continue = handle_batch(receive, send, 13)
         self.assertEqual(should_continue, False)
@@ -27,9 +27,9 @@ class TestMessageHandling(unittest.TestCase):
 
         def send(entries):
             self.assertEqual(len(entries), 3)
-            self.assertEqual(entries[0]['MessageBody'], 'a')
-            self.assertEqual(entries[1]['MessageBody'], 'b')
-            self.assertEqual(entries[2]['MessageBody'], 'c')
+            self.assertEqual(entries[0]['Body'], 'a')
+            self.assertEqual(entries[1]['Body'], 'b')
+            self.assertEqual(entries[2]['Body'], 'c')
 
         should_continue = handle_batch(receive, send, 13)
         self.assertEqual(should_continue, True)
