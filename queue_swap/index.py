@@ -30,7 +30,13 @@ def handler(event, context):
     def send_messages(entries):
         sqs.send_message_batch(QueueUrl=queue_url, Entries=entries)
 
-    for i in range(count/batch):
+    iterations = 1
+    if count > batch:
+        iterations = count // batch
+        if not count % batch == 0:
+            iterations = iterations + 1
+
+    for i in range(iterations):
         should_continue = handle_batch(receive_messages, send_messages, delta)
         if not should_continue:
             break
