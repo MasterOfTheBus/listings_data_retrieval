@@ -1,76 +1,81 @@
 import boto3
 import os
-from datetime import datetime
+
+exec_timeout = 900  # timeout is 15 minutes or 900 seconds
 
 
 def handler(event, context):
     sqs = boto3.client('sqs')
-    queue = os.environ['queue']
-    batch = int(os.environ['batch'])
-    delta = int(os.environ['delta'])
+    ddb = boto3.client('dynamodb')
+    table = os.environ['table']
+    wait_time = os.environ['waitTime']
 
-    response = sqs.get_queue_url(QueueName=queue)
-    queue_url = response['QueueUrl']
+    queue_info = get_queue_info(sqs, ddb, table)
 
-    # Read Messages that are about to expire and write them back to the queue
-    attributes = sqs.get_queue_attributes(
-        QueueUrl=queue_url, AttributeNames=['ApproximateNumberOfMessages'])
+    if queue_info['send_q_count'] == queue_info['recv_q_count']:
+        return {'queue_empty': True}
+    send_queue_url = queue_info['send_q_url']
+    recv_queue_url = queue_info['recv_q_url']
+    count = queue_info['recv_q_count']
 
-    count = int(attributes['Attributes']['ApproximateNumberOfMessages'])
-    if count == 0:
-        return {
-            "queue_empty": True
-        }
+    print(f'Receiving {count} messages from {recv_queue_url} '
+          f'to send to {send_queue_url}')
 
-    def receive_messages():
-        return sqs.receive_message(QueueUrl=queue_url,
-                                   AttributeNames=['SentTimestamp'],
-                                   MaxNumberOfMessages=batch)
-
-    def send_and_delete_messages(entries):
-        to_send = [{'Id': ind, 'MessageBody': x['Body']} for ind, x
-                   in enumerate(entries)]
-        sqs.send_message_batch(QueueUrl=queue_url, Entries=to_send)
-        to_delete = [{'Id': ind, 'ReceiptHandle': x['ReceiptHandle']}
-                     for ind, x in enumerate(entries)]
-        sqs.delete_message_batch(QueueUrl=queue_url, Entries=to_delete)
-
-    iterations = 1
-    if count > batch:
-        iterations = count // batch
-        if not count % batch == 0:
-            iterations = iterations + 1
-
+    iterations = calc_iterations(count, exec_timeout, int(wait_time))
     for i in range(iterations):
-        should_continue = handle_batch(receive_messages,
-                                       send_and_delete_messages,
-                                       delta)
-        if not should_continue:
-            break
+        # Use long polling to get messages
+        response = sqs.receive_message(QueueUrl=recv_queue_url,
+                                       AttributeNames=['SentTimestamp'],
+                                       WaitTimeSeconds=wait_time)
+        messages = response['Messages']
+        if (len(messages) == 0):
+            continue
+
+        message = response['Messages'][0]
+        print('Deleting: ' + message['Body'])
+        sqs.delete_message(QueueUrl=recv_queue_url,
+                           ReceiptHandle=message['ReceiptHandle'])
+
+        print('Resending: ' + message['Body'])
+        sqs.send_message(QueueUrl=send_queue_url, MessageBody=message['Body'])
 
     return {
-        "queue_empty": False
+        "queue_empty": False,
+        "rem_count": count - iterations
     }
 
 
-def handle_batch(receive, send_and_delete, delta):
-    should_continue = True
-    messages = receive()
+def calc_iterations(count, exec_time, poll_time):
+    # Subtract 5 for some buffer
+    max_iterations = (exec_time / poll_time) - 5
+    return min(count, max_iterations)
 
-    to_requeue = []
-    for message in messages:
-        timestamp = int(message['Attributes']['SentTimestamp'])
-        sent_date = datetime.fromtimestamp(timestamp / 1000)
-        today = datetime.today()
-        days_delta = today - sent_date
-        if days_delta.days >= delta:
-            to_requeue.append(message)
-        else:
-            should_continue = False
 
-    if len(to_requeue) == 0:
-        return False
+def get_queue_info(sqs, ddb, table):
+    send_q_item = ddb.get_item(TableName=table, Key={
+        'queue': {'S': 'send_queue'}})
+    send_q_name = send_q_item['Item']['name']
+    recv_q_item = ddb.get_item(TableName=table, Key={
+        'queue': {'S': 'receive_queue'}})
+    recv_q_name = recv_q_item['Item']['name']
 
-    send_and_delete(to_requeue)
+    response = sqs.get_queue_url(QueueName=send_q_name)
+    send_q_url = response['QueueUrl']
+    response = sqs.get_queue_url(QueueName=recv_q_name)
+    recv_q_url = response['QueueUrl']
 
-    return should_continue
+    # Read Messages that are about to expire and write them back to the queue
+    send_q_attr = sqs.get_queue_attributes(
+        QueueUrl=send_q_url, AttributeNames=['ApproximateNumberOfMessages'])
+    recv_q_attr = sqs.get_queue_attributes(
+        QueueUrl=recv_q_url, AttributeNames=['ApproximateNumberOfMessages'])
+
+    send_count = int(send_q_attr['Attributes']['ApproximateNumberOfMessages'])
+    recv_count = int(recv_q_attr['Attributes']['ApproximateNumberOfMessages'])
+
+    queue_info = {
+        'send_q_url': send_q_url, 'recv_q_url': recv_q_url,
+        'send_q_count': send_count, 'recv_q_count': recv_count
+    }
+
+    return queue_info
