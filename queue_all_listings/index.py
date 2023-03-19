@@ -5,8 +5,11 @@ import os
 def handler(event, context):
     s3 = boto3.client('s3')
     sqs = boto3.client('sqs')
+    ddb = boto3.client('dynamodb')
     bucket = os.environ['bucket']
-    queue = os.environ['queue']
+    table = os.environ['table']
+
+    queue_url = get_queue_info(ddb, sqs, table)
 
     response = s3.get_object(Bucket=bucket, Key='listings.csv')
     byte_data = response['Body'].read()
@@ -23,13 +26,20 @@ def handler(event, context):
         else:
             print(f'queuing symbol={symbol}')
             msg = '{"symbol": "%s"}' % (symbol)
-            response = sqs.get_queue_url(QueueName=queue)
-            queueUrl = response['QueueUrl']
-            sqs.send_message(QueueUrl=queueUrl, MessageBody=msg)
+            sqs.send_message(QueueUrl=queue_url, MessageBody=msg)
 
     return {
         "success": True
     }
+
+
+def get_queue_info(ddb, sqs, table):
+    recv_q_item = ddb.get_item(TableName=table, Key={
+        'queue': {'S': 'receive_queue'}})
+    recv_q_name = recv_q_item['Item']['name']['S']
+    print(f'Queue is {recv_q_name}')
+    response = sqs.get_queue_url(QueueName=recv_q_name)
+    return response['QueueUrl']
 
 
 def should_ignore_row(symbol, name):
