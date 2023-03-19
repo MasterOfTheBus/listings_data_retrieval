@@ -8,8 +8,10 @@ def handler(event, context):
     sqs = boto3.client('sqs')
     ddb = boto3.client('dynamodb')
     table = os.environ['table']
-    wait_time = os.environ['waitTime']
-    buffer = os.environ['buffer']
+    wait_time_str = int(os.environ['waitTime'])
+    wait_time = int(wait_time_str) if wait_time_str is not None else 20
+    buffer_str = os.environ['buffer']
+    buffer = int(buffer_str) if buffer_str is not None else 5
 
     queue_info = get_queue_info(sqs, ddb, table)
 
@@ -21,10 +23,12 @@ def handler(event, context):
     recv_queue_name = queue_info['recv_q']
     count = queue_info['recv_q_count']
 
-    print(f'Receiving {count} messages from {recv_queue_url} '
-          f'to send to {send_queue_url}')
+    iterations = calc_iterations(count, exec_timeout,
+                                 wait_time, buffer)
 
-    iterations = calc_iterations(count, exec_timeout, int(wait_time), buffer)
+    print(f'Received total of {count} messages from {recv_queue_name}.'
+          f' Sending {iterations} to {send_queue_name}')
+
     for i in range(iterations):
         # Use long polling to get messages
         response = sqs.receive_message(QueueUrl=recv_queue_url,
@@ -59,42 +63,46 @@ def calc_iterations(count, exec_time, poll_time, buffer):
 
 
 def get_queue_info(sqs, ddb, table):
-    send_q_item = ddb.get_item(TableName=table, Key={
-        'queue': {'S': 'send_queue'}})
-    send_q_name = send_q_item['Item']['name']['S']
-    recv_q_item = ddb.get_item(TableName=table, Key={
-        'queue': {'S': 'receive_queue'}})
-    recv_q_name = recv_q_item['Item']['name']['S']
-
-    response = sqs.get_queue_url(QueueName=send_q_name)
-    send_q_url = response['QueueUrl']
-    response = sqs.get_queue_url(QueueName=recv_q_name)
-    recv_q_url = response['QueueUrl']
-
-    # Read Messages that are about to expire and write them back to the queue
-    send_q_attr = sqs.get_queue_attributes(
-        QueueUrl=send_q_url, AttributeNames=['ApproximateNumberOfMessages'])
-    recv_q_attr = sqs.get_queue_attributes(
-        QueueUrl=recv_q_url, AttributeNames=['ApproximateNumberOfMessages'])
-
-    send_count = int(send_q_attr['Attributes']['ApproximateNumberOfMessages'])
-    recv_count = int(recv_q_attr['Attributes']['ApproximateNumberOfMessages'])
+    send_q = get_single_queue_info(sqs, ddb, table, 'send_queue')
+    recv_q = get_single_queue_info(sqs, ddb, table, 'receive_queue')
 
     queue_info = {
-        'send_q': send_q_name, 'recv_q': recv_q_name,
-        'send_q_url': send_q_url, 'recv_q_url': recv_q_url,
-        'send_q_count': send_count, 'recv_q_count': recv_count
+        'send_q': send_q['name'], 'recv_q': recv_q['name'],
+        'send_q_url': send_q['url'], 'recv_q_url': recv_q['url'],
+        'send_q_count': send_q['count'], 'recv_q_count': recv_q['count']
     }
 
     return queue_info
 
 
+def get_single_queue_info(sqs, ddb, table, type):
+    item = ddb.get_item(TableName=table, Key={
+        'queue': {'S': type}})
+    q_name = item['Item']['name']['S']
+
+    response = sqs.get_queue_url(QueueName=q_name)
+    q_url = response['QueueUrl']
+
+    q_attr = sqs.get_queue_attributes(
+        QueueUrl=q_url, AttributeNames=['ApproximateNumberOfMessages'])
+
+    count = int(q_attr['Attributes']['ApproximateNumberOfMessages'])
+    return {
+        'name': q_name, 'url': q_url, 'count': count
+    }
+
+
 def update_queue_assignment(ddb, send_q_name, recv_q_name, table):
-    ddb.update_item(TableName=table, Key={'queue': {'S': 'send_queue'}},
-                    AttributeUpdates={
-        'name': {'Value': {'S': recv_q_name}}, 'Action': 'PUT'
-                    })
-    ddb.update_item(TableName=table, Key={'queue': {'S': 'receive_queue'}},
-                    AttributeUpdates={
-        'name': {'Value': {'S': send_q_name}}, 'Action': 'PUT'
-                    })
+    ddb_update(ddb, table, 'send_queue', recv_q_name)
+    ddb_update(ddb, table, 'receive_queue', send_q_name)
+
+
+def ddb_update(ddb, table, key, value):
+    ddb.update_item(TableName=table, Key={'queue': {'S': key}},
+                    ExpressionAttributeNames={
+                        '#N': 'name'
+                    },
+                    ExpressionAttributeValues={
+                        ':name': {'S': value},
+                    },
+                    UpdateExpression='SET #N=:name')
