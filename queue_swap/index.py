@@ -61,10 +61,10 @@ def calc_iterations(count, exec_time, poll_time, buffer):
 def get_queue_info(sqs, ddb, table):
     send_q_item = ddb.get_item(TableName=table, Key={
         'queue': {'S': 'send_queue'}})
-    send_q_name = send_q_item['Item']['name']
+    send_q_name = send_q_item['Item']['name']['S']
     recv_q_item = ddb.get_item(TableName=table, Key={
         'queue': {'S': 'receive_queue'}})
-    recv_q_name = recv_q_item['Item']['name']
+    recv_q_name = recv_q_item['Item']['name']['S']
 
     response = sqs.get_queue_url(QueueName=send_q_name)
     send_q_url = response['QueueUrl']
