@@ -9,6 +9,7 @@ def handler(event, context):
     ddb = boto3.client('dynamodb')
     table = os.environ['table']
     wait_time = os.environ['waitTime']
+    buffer = os.environ['buffer']
 
     queue_info = get_queue_info(sqs, ddb, table)
 
@@ -16,12 +17,14 @@ def handler(event, context):
         return {'queue_empty': True}
     send_queue_url = queue_info['send_q_url']
     recv_queue_url = queue_info['recv_q_url']
+    send_queue_name = queue_info['send_q']
+    recv_queue_name = queue_info['recv_q']
     count = queue_info['recv_q_count']
 
     print(f'Receiving {count} messages from {recv_queue_url} '
           f'to send to {send_queue_url}')
 
-    iterations = calc_iterations(count, exec_timeout, int(wait_time))
+    iterations = calc_iterations(count, exec_timeout, int(wait_time), buffer)
     for i in range(iterations):
         # Use long polling to get messages
         response = sqs.receive_message(QueueUrl=recv_queue_url,
@@ -39,15 +42,19 @@ def handler(event, context):
         print('Resending: ' + message['Body'])
         sqs.send_message(QueueUrl=send_queue_url, MessageBody=message['Body'])
 
+    rem_count = count - iterations
+    if rem_count <= 0:
+        update_queue_assignment(ddb, send_queue_name, recv_queue_name, table)
+
     return {
         "queue_empty": False,
-        "rem_count": count - iterations
+        "rem_count": rem_count
     }
 
 
-def calc_iterations(count, exec_time, poll_time):
+def calc_iterations(count, exec_time, poll_time, buffer):
     # Subtract 5 for some buffer
-    max_iterations = (exec_time / poll_time) - 5
+    max_iterations = (exec_time / poll_time) - buffer
     return min(count, max_iterations)
 
 
@@ -74,8 +81,20 @@ def get_queue_info(sqs, ddb, table):
     recv_count = int(recv_q_attr['Attributes']['ApproximateNumberOfMessages'])
 
     queue_info = {
+        'send_q': send_q_name, 'recv_q': recv_q_name,
         'send_q_url': send_q_url, 'recv_q_url': recv_q_url,
         'send_q_count': send_count, 'recv_q_count': recv_count
     }
 
     return queue_info
+
+
+def update_queue_assignment(ddb, send_q_name, recv_q_name, table):
+    ddb.update_item(TableName=table, Key={'queue': {'S': 'send_queue'}},
+                    AttributeUpdates={
+        'name': {'Value': {'S': recv_q_name}}, 'Action': 'PUT'
+                    })
+    ddb.update_item(TableName=table, Key={'queue': {'S': 'receive_queue'}},
+                    AttributeUpdates={
+        'name': {'Value': {'S': send_q_name}}, 'Action': 'PUT'
+                    })
