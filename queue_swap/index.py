@@ -15,8 +15,9 @@ def handler(event, context):
 
     queue_info = get_queue_info(sqs, ddb, table)
 
-    if queue_info['send_q_count'] == queue_info['recv_q_count']:
+    if queue_info['send_q_count'] == 0 and queue_info['recv_q_count'] == 0:
         return {'queue_empty': True}
+
     send_queue_url = queue_info['send_q_url']
     recv_queue_url = queue_info['recv_q_url']
     send_queue_name = queue_info['send_q']
