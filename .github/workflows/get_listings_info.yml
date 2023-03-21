@@ -1,0 +1,32 @@
+name: Get Listings Info Test
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+    paths:
+      - get_listings_info/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+        - uses: actions/checkout@v2
+        - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v2
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install boto3
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        - name: Unit Test
+          run: |
+            cd get_listings_info
+            python -m unittest
