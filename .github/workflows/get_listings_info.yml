@@ -36,6 +36,7 @@ jobs:
         - name: Build Binary
           if: github.ref == 'refs/heads/main'
           run: |
+            cd get_listings_info
             make build
         - name: Configure AWS credentials
           if: github.ref == 'refs/heads/main'
@@ -46,4 +47,5 @@ jobs:
         - name: Deploy to Lambda
           if: github.ref == 'refs/heads/main'
           run: |
+            cd get_listings_info
             aws lambda update-function-code --function-name get_listings_info --zip-file fileb://get_listings_info.zip
