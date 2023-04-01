@@ -4,19 +4,25 @@ import os
 
 def handler(event, context):
     s3 = boto3.client('s3')
-    sqs = boto3.client('sqs')
     ddb = boto3.client('dynamodb')
     bucket = os.environ['bucket']
     table = os.environ['table']
-
-    queue_url = get_queue_info(ddb, sqs, table)
 
     response = s3.get_object(Bucket=bucket, Key='listings.csv')
     byte_data = response['Body'].read()
     str_data = byte_data.decode('utf-8')
     rows_data = str_data.split('\n')
 
-    # Ignore the header row
+    symbols = get_list_of_symbols(rows_data)
+    update_db(ddb, table, symbols)
+
+    return {
+        "symbol": symbols[0]['symbol']
+    }
+
+
+def get_list_of_symbols(rows_data):
+    symbols = []
     for row_str in rows_data[1:]:
         row = row_str.split(',')
         symbol = row[0]
@@ -25,21 +31,30 @@ def handler(event, context):
             print(f'ignoring symbol={symbol}, name={name}')
         else:
             print(f'queuing symbol={symbol}')
-            msg = '{"symbol": "%s"}' % (symbol)
-            sqs.send_message(QueueUrl=queue_url, MessageBody=msg)
+            symbols.append(symbol)
 
-    return {
-        "success": True
-    }
+    return create_records(symbols)
 
 
-def get_queue_info(ddb, sqs, table):
-    recv_q_item = ddb.get_item(TableName=table, Key={
-        'queue': {'S': 'receive_queue'}})
-    recv_q_name = recv_q_item['Item']['name']['S']
-    print(f'Queue is {recv_q_name}')
-    response = sqs.get_queue_url(QueueName=recv_q_name)
-    return response['QueueUrl']
+def create_records(symbols):
+    records = []
+    for i in range(len(symbols) - 1):
+        records.append({'symbol': symbols[i],
+                        'next': symbols[i+1]})
+    return records
+
+
+def update_db(ddb, table, records):
+    for record in records:
+        ddb.put_item(TableName=table, Key={'Type': {'S': 'daily'}},
+                     Item={
+                        'symbol': {
+                            'S': record['symbol']
+                        },
+                        'next': {
+                            'S': record['next']
+                        }
+                     })
 
 
 def should_ignore_row(symbol, name):
