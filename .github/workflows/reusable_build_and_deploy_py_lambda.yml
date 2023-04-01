@@ -26,7 +26,7 @@ jobs:
             python-version: ${{ matrix.python-version }}
         - name: Unit Test
           run: |
-            cd ${{ input.package-dir }}
+            cd ${{ inputs.package-dir }}
             python -m pip install --upgrade pip
             pip install boto3
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -34,7 +34,7 @@ jobs:
         - name: Build Binary
           if: github.ref == 'refs/heads/main'
           run: |
-            cd ${{ input.package-dir }}
+            cd ${{ inputs.package-dir }}
             make build
         - name: Configure AWS credentials
           if: github.ref == 'refs/heads/main'
@@ -45,5 +45,5 @@ jobs:
         - name: Deploy to Lambda
           if: github.ref == 'refs/heads/main'
           run: |
-            cd ${{input.package-dir}}
-            aws lambda update-function-code --function-name ${{ input.package-dir }} --zip-file fileb://${{ input.package-dir }}.zip
+            cd ${{ inputs.package-dir }}
+            aws lambda update-function-code --function-name ${{ inputs.package-dir }} --zip-file fileb://${{ inputs.package-dir }}.zip
