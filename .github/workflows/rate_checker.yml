@@ -1,4 +1,8 @@
-name: Rate Checker Test
+name: Rate Checker Build And Deploy
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
 
 on:
   push:
@@ -7,26 +11,14 @@ on:
       - 'feature/**'
     paths:
       - rate_checker/**
+      - .github/workflows/rate_checker.yml
+      - .github/workflows/reusable**
+  pull_request:
+    branches:
+      - 'feature/**'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9]
-
-    steps:
-        - uses: actions/checkout@v2
-        - name: Set up Python ${{ matrix.python-version }}
-          uses: actions/setup-python@v2
-          with:
-            python-version: ${{ matrix.python-version }}
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install boto3
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        - name: Unit Test
-          run: |
-            cd rate_checker
-            python -m unittest
+  test-and-build:
+    uses: ./.github/workflows/reusable_build_and_deploy_py_lambda.yml
+    with:
+      package-dir: rate_checker
