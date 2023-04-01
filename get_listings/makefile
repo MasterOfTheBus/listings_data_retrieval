@@ -4,7 +4,7 @@ build : get_listings.zip
 package : requirements.txt
 	pip install --target ./package -r requirements.txt
 
-package.zip : package
+get_listings.zip : package
 	cd ./package \
 	&& zip -r ../get_listings.zip . \
 	&& cd ..
