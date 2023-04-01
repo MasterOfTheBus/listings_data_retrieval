@@ -24,11 +24,13 @@ def handler(event, context):
         except RuntimeError:
             raise
 
+    next = get_next_symbol(ddb, symbols_table, symbol)
+
     update_rate_limit(ddb, rate_table)
 
     return {
-        'queue_empty': False,
-        'symbol': get_next_symbol(ddb, symbols_table, symbol)
+        'queue_empty': next == '',
+        'symbol': next
     }
 
 
