@@ -1,186 +1,122 @@
 {
-    "Comment": "A description of my state machine",
-    "StartAt": "Ignore Queue All Listings",
-    "States": {
-      "Ignore Queue All Listings": {
-        "Type": "Choice",
-        "Choices": [
-          {
-            "Variable": "$.ignore_queue_all",
-            "BooleanEquals": true,
-            "Next": "Parallel Processing"
-          }
-        ],
-        "Default": "Queue All Listings"
+  "Comment": "A description of my state machine",
+  "StartAt": "Ignore Queue All Listings",
+  "States": {
+    "Ignore Queue All Listings": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.ignore_queue_all",
+          "BooleanEquals": true,
+          "Next": "Rate Checker"
+        }
+      ],
+      "Default": "Queue All Listings"
+    },
+    "Queue All Listings": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:queue_all_listings:$LATEST"
       },
-      "Queue All Listings": {
-        "Type": "Task",
-        "Resource": "arn:aws:states:::lambda:invoke",
-        "OutputPath": "$.Payload",
-        "Parameters": {
-          "Payload.$": "$",
-          "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:queue_all_listings:$LATEST"
-        },
-        "Retry": [
-          {
-            "ErrorEquals": [
-              "Lambda.ServiceException",
-              "Lambda.AWSLambdaException",
-              "Lambda.SdkClientException",
-              "Lambda.TooManyRequestsException"
-            ],
-            "IntervalSeconds": 2,
-            "MaxAttempts": 6,
-            "BackoffRate": 2
-          }
-        ],
-        "Next": "Parallel Processing"
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Rate Checker"
+    },
+    "Rate Checker": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:rate_checker:$LATEST"
       },
-      "Parallel Processing": {
-        "Type": "Parallel",
-        "Branches": [
-          {
-            "StartAt": "Rate Checker",
-            "States": {
-              "Rate Checker": {
-                "Type": "Task",
-                "Resource": "arn:aws:states:::lambda:invoke",
-                "OutputPath": "$.Payload",
-                "Parameters": {
-                  "Payload.$": "$",
-                  "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:rate_checker:$LATEST"
-                },
-                "Retry": [
-                  {
-                    "ErrorEquals": [
-                      "Lambda.ServiceException",
-                      "Lambda.AWSLambdaException",
-                      "Lambda.SdkClientException",
-                      "Lambda.TooManyRequestsException"
-                    ],
-                    "IntervalSeconds": 2,
-                    "MaxAttempts": 6,
-                    "BackoffRate": 2
-                  }
-                ],
-                "Next": "Daily Rate Reached"
-              },
-              "Daily Rate Reached": {
-                "Type": "Choice",
-                "Choices": [
-                  {
-                    "Variable": "$.wait",
-                    "BooleanEquals": false,
-                    "Next": "Get Listing Info"
-                  }
-                ],
-                "Default": "Wait Until Next Day"
-              },
-              "Get Listing Info": {
-                "Type": "Task",
-                "Resource": "arn:aws:states:::lambda:invoke",
-                "OutputPath": "$.Payload",
-                "Parameters": {
-                  "Payload.$": "$",
-                  "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:get_listings_info:$LATEST"
-                },
-                "Retry": [
-                  {
-                    "ErrorEquals": [
-                      "Lambda.ServiceException",
-                      "Lambda.AWSLambdaException",
-                      "Lambda.SdkClientException",
-                      "Lambda.TooManyRequestsException"
-                    ],
-                    "IntervalSeconds": 2,
-                    "MaxAttempts": 6,
-                    "BackoffRate": 2
-                  }
-                ],
-                "Next": "Queue Empty"
-              },
-              "Queue Empty": {
-                "Type": "Choice",
-                "Choices": [
-                  {
-                    "Variable": "$.queue_empty",
-                    "BooleanEquals": true,
-                    "Next": "Go to end"
-                  }
-                ],
-                "Default": "Wait 1 Minute"
-              },
-              "Wait 1 Minute": {
-                "Type": "Wait",
-                "Seconds": 60,
-                "Next": "Rate Checker"
-              },
-              "Go to end": {
-                "Type": "Pass",
-                "End": true
-              },
-              "Wait Until Next Day": {
-                "Type": "Wait",
-                "TimestampPath": "$.input.timestamp",
-                "Next": "Rate Checker"
-              }
-            }
-          },
-          {
-            "StartAt": "Wait 13.5 Days",
-            "States": {
-              "Wait 13.5 Days": {
-                "Type": "Wait",
-                "Seconds": 1166400,
-                "Next": "Queue Swap"
-              },
-              "Queue Swap": {
-                "Type": "Task",
-                "Resource": "arn:aws:states:::lambda:invoke",
-                "OutputPath": "$.Payload",
-                "Parameters": {
-                  "Payload.$": "$",
-                  "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:queue_swap:$LATEST"
-                },
-                "Retry": [
-                  {
-                    "ErrorEquals": [
-                      "Lambda.ServiceException",
-                      "Lambda.AWSLambdaException",
-                      "Lambda.SdkClientException",
-                      "Lambda.TooManyRequestsException"
-                    ],
-                    "IntervalSeconds": 2,
-                    "MaxAttempts": 6,
-                    "BackoffRate": 2
-                  }
-                ],
-                "Next": "Queue Swap Check"
-              },
-              "Queue Swap Check": {
-                "Type": "Choice",
-                "Choices": [
-                  {
-                    "Variable": "$.queue_empty",
-                    "BooleanEquals": true,
-                    "Next": "Go to End"
-                  },
-                  {
-                    "Variable": "$.rem_count",
-                    "NumericGreaterThan": 0,
-                    "Next": "Queue Swap"
-                  }
-                ],
-                "Default": "Wait 13.5 Days"
-              },
-              "Go to End": {
-                "Type": "Pass",
-                "End": true
-              }
-            }
-          }
-        ],
-        "End": true
-      }
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Daily Rate Reached"
+    },
+    "Daily Rate Reached": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.wait",
+          "BooleanEquals": false,
+          "Next": "Get Listing Info"
+        }
+      ],
+      "Default": "Wait Until Next Day"
+    },
+    "Get Listing Info": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:get_listings_info:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Queue Empty"
+    },
+    "Queue Empty": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.queue_empty",
+          "BooleanEquals": true,
+          "Next": "Go to end"
+        }
+      ],
+      "Default": "Wait 1 Minute"
+    },
+    "Wait 1 Minute": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Rate Checker"
+    },
+    "Go to end": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Wait Until Next Day": {
+      "Type": "Wait",
+      "TimestampPath": "$.input.timestamp",
+      "Next": "Rate Checker"
     }
   }
+}
