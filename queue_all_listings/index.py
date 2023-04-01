@@ -38,9 +38,14 @@ def get_list_of_symbols(rows_data):
 
 def create_records(symbols):
     records = []
-    for i in range(len(symbols) - 1):
-        records.append({'symbol': symbols[i],
-                        'next': symbols[i+1]})
+    count = len(symbols)
+    for i in range(count):
+        if i < count - 1:
+            records.append({'symbol': symbols[i],
+                            'next': symbols[i+1]})
+        else:
+            records.append({'symbol': symbols[i],
+                            'next': ''})
     return records
 
 
