@@ -10,7 +10,7 @@ on:
       - main
       - 'feature/**'
     paths:
-      - queue_all_listings/**
+      - get_listings/**
       - .github/workflows/get_listings.yml
       - .github/workflows/reusable**
   pull_request:
