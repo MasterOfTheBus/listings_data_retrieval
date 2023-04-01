@@ -8,6 +8,8 @@ def handler(event, context):
     table = os.environ['table']
     daily_limit = os.environ['daily_limit']
 
+    next_symbol = event['symbol']
+
     response = ddb.get_item(TableName=table, Key={
         'Type': {'S': 'daily'}
     })
@@ -16,7 +18,7 @@ def handler(event, context):
 
     if count >= daily_limit:
         if current_day_before_or_equals_saved_date(day):
-            return {'wait': True}
+            return {'wait': True, 'symbol': next_symbol}
         else:
             today = date.today().isoformat()
             ddb.update_item(TableName=table, Key={'Type': {'S': 'daily'}},
@@ -31,7 +33,7 @@ def handler(event, context):
                             UpdateExpression='SET #D=:day, #C=:count')
             print(f'reset count to 0, day to {today}')
 
-    return {'wait': False}
+    return {'wait': False, 'symbol': next_symbol}
 
 
 def current_day_before_or_equals_saved_date(saved_date_str):
