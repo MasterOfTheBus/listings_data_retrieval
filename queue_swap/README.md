@@ -1,3 +1,5 @@
+# DEPRECATED
+
 Swaps messages in SQS queues to get around max retention period.
 
 ## Packaging for Deployment
