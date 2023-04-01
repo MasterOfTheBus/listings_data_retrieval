@@ -1,0 +1,49 @@
+name: Build and Deploy Python Lambda Package
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+on:
+  workflow_call:
+    inputs:
+      package-dir:
+        required: true
+        type: string
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+        - uses: actions/checkout@v2
+        - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v2
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Unit Test
+          run: |
+            cd ${{ input.package-dir }}
+            python -m pip install --upgrade pip
+            pip install boto3
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            python -m unittest
+        - name: Build Binary
+          if: github.ref == 'refs/heads/main'
+          run: |
+            cd ${{ input.package-dir }}
+            make build
+        - name: Configure AWS credentials
+          if: github.ref == 'refs/heads/main'
+          uses: aws-actions/configure-aws-credentials@v2
+          with:
+            role-to-assume: arn:aws:iam::025257542471:role/github_oidc_role
+            aws-region: us-east-1
+        - name: Deploy to Lambda
+          if: github.ref == 'refs/heads/main'
+          run: |
+            cd ${{input.package-dir}}
+            aws lambda update-function-code --function-name ${{ input.package-dir }} --zip-file fileb://${{ input.package-dir }}.zip

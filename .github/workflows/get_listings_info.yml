@@ -1,9 +1,5 @@
 name: Get Listings Info Test
 
-permissions:
-  id-token: write   # This is required for requesting the JWT
-  contents: read    # This is required for actions/checkout
-
 on:
   push:
     branches:
@@ -12,45 +8,13 @@ on:
     paths:
       - get_listings_info/**
       - .github/workflows/get_listings_info.yml
+      - .github/workflows/reusable/**
   pull_request:
     branches:
       - 'feature/**'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.9]
-
-    steps:
-        - uses: actions/checkout@v2
-        - name: Set up Python ${{ matrix.python-version }}
-          uses: actions/setup-python@v2
-          with:
-            python-version: ${{ matrix.python-version }}
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install boto3
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        - name: Unit Test
-          run: |
-            cd get_listings_info
-            python -m unittest
-        - name: Build Binary
-          if: github.ref == 'refs/heads/main'
-          run: |
-            cd get_listings_info
-            make build
-        - name: Configure AWS credentials
-          if: github.ref == 'refs/heads/main'
-          uses: aws-actions/configure-aws-credentials@v2
-          with:
-            role-to-assume: arn:aws:iam::025257542471:role/github_oidc_role
-            aws-region: us-east-1
-        - name: Deploy to Lambda
-          if: github.ref == 'refs/heads/main'
-          run: |
-            cd get_listings_info
-            aws lambda update-function-code --function-name get_listings_info --zip-file fileb://get_listings_info.zip
+  test-and-build:
+    uses: MasterOfTheBus/listings_data_retrieval/.github/workflows/reusable/build_and_deploy_py_lambda.yml@main
+    with:
+      package-dir: get_listings_info
