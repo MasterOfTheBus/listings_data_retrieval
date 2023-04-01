@@ -1,4 +1,4 @@
-name: Get Listings Info Test
+name: Get Listings Info Build and Deploy
 
 permissions:
   id-token: write   # This is required for requesting the JWT
