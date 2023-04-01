@@ -1,8 +1,8 @@
 build :
-	zip package.zip index.py
+	zip queue_all_listings.zip index.py
 
 clean :
-	rm -rf package.zip
+	rm -rf queue_all_listings.zip
 
 test :
 	python -m unittest
