@@ -1,0 +1,33 @@
+name: State Machine Test and Deploy
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+    paths:
+      - state_machine/**
+      - .github/workflows/state_machine.yml
+  pull_request:
+    branches:
+      - 'feature/**'
+
+jobs:
+  test-and-deploy:
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::025257542471:role/github_oidc_role
+          aws-region: us-east-1
+      - name: Deploy to StepFunctions
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd state_machine
+          aws stepfunctions update-state-machine --state-machine-arn arn:aws:states:us-east-1:025257542471:stateMachine:DataRetrieval --definition file://data_retrieval.json
