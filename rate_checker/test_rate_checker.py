@@ -1,7 +1,7 @@
 import unittest
 from datetime import date, timedelta, datetime
 from index import current_day_before_or_equals_saved_date, \
-    calc_wait_until_next_day
+    calc_next_day_timestamp
 
 
 class TestDateComparison(unittest.TestCase):
@@ -27,11 +27,8 @@ class TestDateComparison(unittest.TestCase):
 
     def test_calc_wait_until_next_day(self):
         test_day = date(year=2023, month=4, day=1)
-        expected_day = datetime(year=2023, month=4, day=2,
-                                hour=12, minute=0, second=0)
-
-        next_day = calc_wait_until_next_day(test_day)
-        self.assertEqual(next_day, expected_day)
+        next_day = calc_next_day_timestamp(test_day)
+        self.assertEqual(next_day, "2023-04-02T12:00:00Z")
 
 
 if __name__ == '__main__':

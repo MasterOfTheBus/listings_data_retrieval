@@ -1,6 +1,6 @@
 import boto3
 import os
-from datetime import date, time, datetime, timedelta
+from datetime import date, time, datetime, timedelta, timezone
 
 
 def handler(event, context):
@@ -18,7 +18,7 @@ def handler(event, context):
 
     if count >= daily_limit:
         if current_day_before_or_equals_saved_date(day):
-            next_day = calc_wait_until_next_day(date.today())
+            next_day = calc_next_day_timestamp(date.now(timezone.utc))
             return {'wait': True, 'symbol': next_symbol, 'next_day': next_day}
         else:
             today = date.today().isoformat()
@@ -37,10 +37,12 @@ def handler(event, context):
     return {'wait': False, 'symbol': next_symbol}
 
 
-def calc_wait_until_next_day(current_date):
+def calc_next_day_timestamp(current_date):
     noon_time_local = time(hour=12)
     next_day = current_date + timedelta(days=1)
-    return datetime.combine(date=next_day, time=noon_time_local)
+    next_datetime = datetime.combine(date=next_day, time=noon_time_local,
+                                     tzinfo=timezone.utc)
+    return next_datetime.isoformat(timespec='seconds').replace("+00:00", "Z")
 
 
 def current_day_before_or_equals_saved_date(saved_date_str):
