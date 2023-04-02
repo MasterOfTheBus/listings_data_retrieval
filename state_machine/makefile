@@ -19,3 +19,6 @@ exec-happypath : create-sm
 get-results:
 	aws stepfunctions get-execution-history --endpoint http://localhost:8083 \
 	--execution-arn arn:aws:states:us-east-1:123456789012:execution:DataRetrieval:mockedHappyPath > execution_results.json
+
+test :
+	python -m unittest

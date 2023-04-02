@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 def prepare_mock_config():
     # Kind of hacky, setup the config to mock a wait for the next 2 minutes
-    next_time = datetime.now(timezone.utc) + timedelta(minutes=2)
+    next_time = datetime.now(timezone.utc) + timedelta(minutes=3)
     with open('data_retrieval_mock_config_base.json', 'r') as f:
         config = json.load(f)
         (config['MockedResponses']

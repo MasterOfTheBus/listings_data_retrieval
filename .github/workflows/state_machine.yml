@@ -19,8 +19,25 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v2
+          with:
+            python-version: ${{ matrix.python-version }}
+      - name: Run Local Execution
+        run: |
+          python prepare_mock_config.py
+          make docker
+          make create-sm
+          make exec-happypath
+          sleep 300s
+          make get-results
+          make test
       - name: Configure AWS credentials
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v2
