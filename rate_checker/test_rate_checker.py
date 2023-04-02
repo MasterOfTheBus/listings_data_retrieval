@@ -1,5 +1,5 @@
 import unittest
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from index import current_day_before_or_equals_saved_date, \
     calc_next_day_timestamp
 
