@@ -19,6 +19,9 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: state_machine
     strategy:
       matrix:
         python-version: [3.9]
@@ -54,5 +57,4 @@ jobs:
       - name: Deploy to StepFunctions
         if: github.ref == 'refs/heads/main'
         run: |
-          cd state_machine
           aws stepfunctions update-state-machine --state-machine-arn arn:aws:states:us-east-1:025257542471:stateMachine:DataRetrieval --definition file://data_retrieval.json
