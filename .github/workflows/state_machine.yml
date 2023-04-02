@@ -29,6 +29,10 @@ jobs:
           uses: actions/setup-python@v2
           with:
             python-version: ${{ matrix.python-version }}
+      - name: Setup Docker
+        run: |
+          docker pull amazon/aws-stepfunctions-local
+          docker run -p 8083:8083 amazon/aws-stepfunctions-local
       - name: Run Local Execution
         run: |
           python prepare_mock_config.py
