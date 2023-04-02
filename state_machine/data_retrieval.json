@@ -115,7 +115,7 @@
     },
     "Wait Until Next Day": {
       "Type": "Wait",
-      "TimestampPath": "$.input.timestamp",
+      "TimestampPath": "$.next_day",
       "Next": "Rate Checker"
     }
   }
