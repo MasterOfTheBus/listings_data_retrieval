@@ -47,7 +47,7 @@ jobs:
       - name: Run StepFunctions Local
         run: |
           export SFN_MOCK_CONFIG="data_retrieval_mock_config.json"
-          java -jar StepFunctionsLocal.jar
+          java -jar StepFunctionsLocal.jar &
       - name: Run Local Execution
         run: |
           make create-sm
