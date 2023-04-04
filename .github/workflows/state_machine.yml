@@ -40,7 +40,7 @@ jobs:
       - name: Download StepFunctionsLocal Jar
         run: |
           wget https://s3.amazonaws.com/stepfunctionslocal/StepFunctionsLocal.zip
-          unzip StepFunctionsLocal.jar
+          unzip StepFunctionsLocal.zip
 
       - name: Prepare Mock Config
         run: python prepare_mock_config.py
