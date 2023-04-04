@@ -32,22 +32,30 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Setup Docker
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Download StepFunctionsLocal Jar
         run: |
-          docker pull amazon/aws-stepfunctions-local
-          docker run -p 8083:8083 -d amazon/aws-stepfunctions-local | echo "docker_cont=$(</dev/stdin)" >> $GITHUB_ENV
+          wget https://s3.amazonaws.com/stepfunctionslocal/StepFunctionsLocal.zip
+          unzip StepFunctionsLocal.jar
+
+      - name: Prepare Mock Config
+        run: python prepare_mock_config.py
+      - name: Run StepFunctions Local
+        run: |
+          export SFN_MOCK_CONFIG="data_retrieval_mock_config.json"
+          java -jar StepFunctionsLocal.jar
       - name: Run Local Execution
         run: |
-          python prepare_mock_config.py
-          make docker
           make create-sm
           make exec-happypath
           sleep 300s
           make get-results
           make test
-      - name: Cleanup Docker
-        run: |
-          docker stop ${{ env.docker_cont }}
+
       - name: Configure AWS credentials
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v2
