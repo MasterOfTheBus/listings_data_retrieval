@@ -1,11 +1,14 @@
-docker :
+docker-stepfn :
 	docker run -p 8083:8083 \
 	--mount type=bind,readonly,source=$(PWD)/data_retrieval_mock_config.json,\
 	destination=/home/StepFunctionsLocal/MockConfigFile.json \
 	-e SFN_MOCK_CONFIG="/home/StepFunctionsLocal/MockConfigFile.json" \
 	-d amazon/aws-stepfunctions-local
 
-create-sm : docker
+jar-stepfn :
+	java -jar sflocal/StepFunctionsLocal.jar
+
+create-sm :
 	aws stepfunctions create-state-machine --endpoint http://localhost:8083 \
 	--definition file://data_retrieval.json \
 	--name "DataRetrieval" --role-arn "arn:aws:iam::123456789012:role/service-role/DataRetrieval"
