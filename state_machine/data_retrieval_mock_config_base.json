@@ -1,0 +1,75 @@
+{
+  "StateMachines": {
+    "DataRetrieval": {
+      "TestCases": {
+        "HappyPath": {
+          "Queue All Listings": "MockedQueueAllListings",
+          "Rate Checker": "MockedRateCheckerHappyPath",
+          "Get Listing Info": "MockedGetListingInfoHappyPath"
+        }
+      }
+    }
+  },
+  "MockedResponses": {
+    "MockedQueueAllListings": {
+      "0": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "symbol": "GOOG"
+          }
+        }
+      }
+    },
+    "MockedRateCheckerHappyPath": {
+      "0": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": false,
+            "symbol": "GOOG"
+          }
+        }
+      },
+      "1": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": true,
+            "symbol": "MSFT",
+            "next_day": ""
+          }
+        }
+      },
+      "2": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": false,
+            "symbol": "MSFT"
+          }
+        }
+      }
+    },
+    "MockedGetListingInfoHappyPath": {
+      "0": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "queue_empty": false,
+            "symbol": "MSFT"
+          }
+        }
+      },
+      "1": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "queue_empty": true,
+            "symbol": ""
+          }
+        }
+      }
+    }
+  }
+}

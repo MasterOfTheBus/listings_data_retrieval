@@ -16,11 +16,57 @@ on:
     branches:
       - 'feature/**'
 
+env:
+  SFN_MOCK_CONFIG: data_retrieval_mock_config.json
+  AWS_REGION: us-east-1
+
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: state_machine
+    strategy:
+      matrix:
+        python-version: [3.9]
+
     steps:
+      ### Setup For Testing and Deploying
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Download StepFunctionsLocal Jar
+        run: |
+          wget https://s3.amazonaws.com/stepfunctionslocal/StepFunctionsLocal.zip
+          unzip StepFunctionsLocal.zip
+      - name: Configure AWS Test credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::025257542471:role/github-oidc-testing-role
+          aws-region: us-east-1
+
+      ### Testing
+      - name: Prepare Mock Config
+        run: python prepare_mock_config.py
+      - name: Run StepFunctions Local
+        run: |
+          java -jar StepFunctionsLocal.jar &
+      - name: Run Local Execution
+        run: |
+          make create-sm
+          make exec-happypath
+          sleep 300s
+          make get-results
+          make test
+
+      ### Deploying
       - name: Configure AWS credentials
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v2
@@ -30,5 +76,4 @@ jobs:
       - name: Deploy to StepFunctions
         if: github.ref == 'refs/heads/main'
         run: |
-          cd state_machine
           aws stepfunctions update-state-machine --state-machine-arn arn:aws:states:us-east-1:025257542471:stateMachine:DataRetrieval --definition file://data_retrieval.json

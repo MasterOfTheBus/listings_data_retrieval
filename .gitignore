@@ -3,3 +3,8 @@ package.zip
 __pycache__
 
 full_set_results.csv
+
+# state_machine files to ignore
+execution_results.json
+data_retrieval_mock_config.json
+sflocal
