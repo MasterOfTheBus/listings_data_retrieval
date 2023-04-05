@@ -47,7 +47,7 @@ class TestStateMachine(unittest.TestCase):
             'Daily Rate Reached',
             'Get Listing Info',
             'Queue Empty',
-            'Go To end',
+            'Go to end',
         ]
 
         exited_states = []
