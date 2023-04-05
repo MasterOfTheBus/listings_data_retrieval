@@ -16,6 +16,10 @@ on:
     branches:
       - 'feature/**'
 
+env:
+  SFN_MOCK_CONFIG: data_retrieval_mock_config.json
+  AWS_REGION: us-east-1
+
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
@@ -44,10 +48,11 @@ jobs:
 
       - name: Prepare Mock Config
         run: python prepare_mock_config.py
-      - name: Run StepFunctions Local and Test
+      - name: Run StepFunctions Local
         run: |
-          export SFN_MOCK_CONFIG="data_retrieval_mock_config.json"
           java -jar StepFunctionsLocal.jar &
+      - name: Run Local Execution
+        run: |
           make create-sm
           make exec-happypath
           sleep 300s
