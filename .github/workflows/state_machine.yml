@@ -44,12 +44,10 @@ jobs:
 
       - name: Prepare Mock Config
         run: python prepare_mock_config.py
-      - name: Run StepFunctions Local
+      - name: Run StepFunctions Local and Test
         run: |
           export SFN_MOCK_CONFIG="data_retrieval_mock_config.json"
           java -jar StepFunctionsLocal.jar &
-      - name: Run Local Execution
-        run: |
           make create-sm
           make exec-happypath
           sleep 300s
