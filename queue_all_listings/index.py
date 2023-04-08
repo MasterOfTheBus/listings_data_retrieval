@@ -21,14 +21,24 @@ def handler(event, context):
     }
 
 
+def read_file_data(response):
+    byte_data = response['Body'].read()
+    str_data = byte_data.decode('utf-8')
+    return str_data.split('\n')
+
+
 def get_list_of_symbols(rows_data):
     symbols = []
     for row_str in rows_data[1:]:
+        # Ignore empty row
+        if row_str == '':
+            continue
         row = row_str.split(',')
         symbol = row[0]
         name = row[1]
-        if should_ignore_row(symbol, name):
-            print(f'ignoring symbol={symbol}, name={name}')
+        asset_type = row[3]  # assetType
+        if should_ignore_row(symbol, name, asset_type):
+            print(f'ignoring symbol={symbol}, name={name}, type={asset_type}')
         else:
             print(f'queuing symbol={symbol}')
             symbols.append(symbol)
@@ -62,8 +72,9 @@ def update_db(ddb, table, records):
                      })
 
 
-def should_ignore_row(symbol, name):
-    return '-' in symbol \
+def should_ignore_row(symbol, name, asset_type):
+    return asset_type == 'ETF' \
+        or '-' in symbol \
         or '- Units' in name \
         or '- Warrants' in name \
         or 'Acquisition' in name \
