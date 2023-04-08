@@ -10,6 +10,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package-dir }}
     strategy:
       matrix:
         python-version: [3.9]
@@ -22,15 +25,13 @@ jobs:
             python-version: ${{ matrix.python-version }}
         - name: Unit Test
           run: |
-            cd ${{ inputs.package-dir }}
             python -m pip install --upgrade pip
             pip install boto3
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-            python -m unittest
+            make test
         - name: Build Binary
           if: github.ref == 'refs/heads/main'
           run: |
-            cd ${{ inputs.package-dir }}
             make build
         - name: Configure AWS credentials
           if: github.ref == 'refs/heads/main'
@@ -41,5 +42,4 @@ jobs:
         - name: Deploy to Lambda
           if: github.ref == 'refs/heads/main'
           run: |
-            cd ${{ inputs.package-dir }}
             aws lambda update-function-code --function-name ${{ inputs.package-dir }} --zip-file fileb://${{ inputs.package-dir }}.zip
