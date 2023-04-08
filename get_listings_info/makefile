@@ -11,3 +11,6 @@ get_listings_info.zip : package
 
 clean :
 	rm -rf ./package get_listings_info.zip
+
+test :
+	python -m unittest
