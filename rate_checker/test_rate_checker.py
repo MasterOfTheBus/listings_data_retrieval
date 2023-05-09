@@ -1,34 +1,66 @@
 import unittest
 from datetime import date, timedelta
-from index import current_day_before_or_equals_saved_date, \
-    calc_next_day_timestamp
+from index import determine_wait
 
 
-class TestDateComparison(unittest.TestCase):
+class TestRateChecker(unittest.TestCase):
 
-    # current_day_before_or_equals_saved_date Tests
-
-    def test_current_day_before_stored_date(self):
-        day = date.today() + timedelta(days=10)
-        result = current_day_before_or_equals_saved_date(day.isoformat())
-        self.assertEqual(result, True)
-
-    def test_current_day_after_stored_date(self):
-        day = date.today() - timedelta(days=10)
-        result = current_day_before_or_equals_saved_date(day.isoformat())
-        self.assertEqual(result, False)
-
-    def test_current_day_equals_stored_date(self):
+    def test_count_less_than_all_limits_1(self):
         day = date.today()
-        result = current_day_before_or_equals_saved_date(day.isoformat())
-        self.assertEqual(result, True)
+        result = determine_wait(count=0, key=1, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], False)
+        self.assertEqual(result['key'], 1)
+        self.assertEqual(result['reset_db'], False)
 
-    # calc_wait_until_next_day Tests
+    def test_count_less_than_all_limits_2(self):
+        day = date.today()
+        result = determine_wait(count=5, key=1, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], False)
+        self.assertEqual(result['key'], 1)
+        self.assertEqual(result['reset_db'], False)
 
-    def test_calc_wait_until_next_day(self):
-        test_day = date(year=2023, month=4, day=1)
-        next_day = calc_next_day_timestamp(test_day)
-        self.assertEqual(next_day, "2023-04-02T12:00:00Z")
+    def test_count_equals_key_limit(self):
+        day = date.today()
+        result = determine_wait(count=10, key=1, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], False)
+        self.assertEqual(result['key'], 2)
+        self.assertEqual(result['reset_db'], False)
+
+    def test_count_greater_than_key_limit_1(self):
+        day = date.today()
+        result = determine_wait(count=15, key=2, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], False)
+        self.assertEqual(result['key'], 2)
+        self.assertEqual(result['reset_db'], False)
+
+    def test_count_greater_than_key_limit_2(self):
+        day = date.today()
+        result = determine_wait(count=25, key=3, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], False)
+        self.assertEqual(result['key'], 3)
+        self.assertEqual(result['reset_db'], False)
+
+    def test_count_ge_day_limit_before_EOD(self):
+        day = date.today()
+        result = determine_wait(count=30, key=3, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], True)
+        self.assertEqual(result['key'], 1)
+        self.assertEqual(result['reset_db'], False)
+        self.assertIsNotNone(result['next_day'])
+
+    def test_count_ge_day_limit_next_day(self):
+        day = date.today() - timedelta(days=1)
+        result = determine_wait(count=30, key=3, day=day.isoformat(),
+                                key_limit=10, num_keys=3)
+        self.assertEqual(result['wait'], False)
+        self.assertEqual(result['key'], 1)
+        self.assertEqual(result['reset_db'], True)
 
 
 if __name__ == '__main__':
