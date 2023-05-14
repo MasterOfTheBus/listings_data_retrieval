@@ -1,0 +1,13 @@
+symbol,name,exchange,assetType,ipoDate,delistingDate,status
+A,Agilent Technologies Inc,NYSE,Stock,1999-11-18,null,Active
+AA,Alcoa Corp,NYSE,Stock,2016-10-18,null,Active
+AAA,AXS FIRST PRIORITY CLO BOND ETF ,NYSE ARCA,ETF,2020-09-09,null,Active
+AAAU,Goldman Sachs Physical Gold ETF,BATS,ETF,2018-08-15,null,Active
+AAC,Ares Acquisition Corporation - Class A,NYSE,Stock,2021-03-25,null,Active
+AAC-U,Ares Acquisition Corporation - Units (1 Ord Share Class A & 1/5 War),NYSE,Stock,2021-02-02,null,Active
+AAC-WS,Ares Acquisition Corporation - Warrants (01/01/9999),NYSE,Stock,2021-03-25,null,Active
+AACG,ATA Creativity Global,NASDAQ,Stock,2008-01-29,null,Active
+AACI,Armada Acquisition Corp I,NASDAQ,Stock,2021-11-10,null,Active
+AACIU,Armada Acquisition Corp I - Units (1 Ord & 1/2 War),NASDAQ,Stock,2021-08-13,null,Active
+AACIW,Armada Acquisition Corp I - Warrants (13/08/2026),NASDAQ,Stock,2021-11-11,null,Active
+AADI,Aadi Bioscience Inc,NASDAQ,Stock,2017-08-08,null,Active
