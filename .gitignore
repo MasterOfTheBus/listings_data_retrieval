@@ -8,3 +8,6 @@ full_set_results.csv
 execution_results.json
 data_retrieval_mock_config.json
 sflocal
+
+# Ignore OSX files
+.DS_STORE
