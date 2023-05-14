@@ -22,7 +22,8 @@ def handler(event, context):
     symbols = get_list_of_symbols(rows_data)
     remaining_symbols = send_events(sns, symbols, topic, num_parallel)
 
-    return {'listings': remaining_symbols}
+    return {'listings': remaining_symbols,
+            'queue_empty': len(remaining_symbols) == 0}
 
 
 def read_file_data(response):
@@ -51,8 +52,9 @@ def get_list_of_symbols(rows_data):
 
 
 def send_events(sns, symbols, topic, num_parallel):
-    for i in range(num_parallel):
-        print(f'Sending event for ${symbols[i]}')
+    iterations = min(len(symbols), num_parallel)
+    for i in range(iterations):
+        print(f'Sending event for {symbols[i]}')
         sns.publish(TopicArn=topic, Message=json.dumps({'symbol': symbols[i]}))
 
     return symbols[num_parallel:]
