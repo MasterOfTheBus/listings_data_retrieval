@@ -28,7 +28,7 @@ class TestDateComparison(unittest.TestCase):
     def test_calc_wait_until_next_day(self):
         test_day = date(year=2023, month=4, day=1)
         next_day = calc_next_day_timestamp(test_day)
-        self.assertEqual(next_day, "2023-04-02T12:00:00Z")
+        self.assertEqual(next_day, "2023-04-02T00:00:00Z")
 
 
 if __name__ == '__main__':

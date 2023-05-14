@@ -11,7 +11,7 @@ def handler(event, context):
     num_parallel = os.environ['num_parallel']
 
     rows_data = []
-    if event is not None and event['listings'] is not None:
+    if event is not None and 'listings' in event:
         rows_data = event['listings']
     else:
         response = s3.get_object(Bucket=bucket, Key='listings.csv')
