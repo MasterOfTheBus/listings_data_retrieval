@@ -76,4 +76,4 @@ jobs:
       - name: Deploy to StepFunctions
         if: github.ref == 'refs/heads/main'
         run: |
-          aws stepfunctions update-state-machine --state-machine-arn arn:aws:states:us-east-1:025257542471:stateMachine:DataRetrieval --definition file://data_retrieval.json
+          aws stepfunctions update-state-machine --state-machine-arn arn:aws:states:us-east-1:025257542471:stateMachine:DataRetrievalParallel --definition file://data_retrieval.json
