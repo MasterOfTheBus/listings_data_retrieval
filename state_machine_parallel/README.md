@@ -3,6 +3,8 @@
 ### Setup
 Summarized from the [docs](https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local.html)
 
+
+#### Using Docker
 Pull the Docker image
 `docker pull amazon/aws-stepfunctions-local`
 
@@ -12,13 +14,36 @@ Run the downloaded docker image
 If you have an env file, specify it by
 `docker run -p 8083:8083 --env-file aws-stepfunctions-local-credentials.txt amazon/aws-stepfunctions-local`
 
-### Running
-With a mocked config file, run docker and pass the file
+#### Using Jar
+```
+wget https://s3.amazonaws.com/stepfunctionslocal/StepFunctionsLocal.zip
+unzip StepFunctionsLocal.zip sflocal/
+```
 
+### Running
+```
+python prepare_mock_config.py
+make docker-stepfn ## Or make jar-stepfn
+make create-sm
+make exec-happypath
+### Wait about 5 minutes for the wait steps
+make get-results
+make test
+```
+
+
+### OLD Notes
+#### Docker
+With a mocked config file, run docker and pass the file
 ```
 docker run -p 8083:8083 
 --mount type=bind,readonly,source={absolute path to mock config file},destination=/home/StepFunctionsLocal/MockConfigFile.json 
 -e SFN_MOCK_CONFIG="/home/StepFunctionsLocal/MockConfigFile.json" amazon/aws-stepfunctions-local
+```
+
+#### Jar
+```
+java -jar StepFunctionsLocal.jar &
 ```
 
 Create the State Machine in AWS CLI

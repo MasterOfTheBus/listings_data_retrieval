@@ -9,7 +9,7 @@ def prepare_mock_config():
         config = json.load(f)
         (config['MockedResponses']
          ['MockedRateCheckerHappyPath']
-         ['1']
+         ['2']
          ['Return']
          ['Payload']
          ['next_day']) = \
