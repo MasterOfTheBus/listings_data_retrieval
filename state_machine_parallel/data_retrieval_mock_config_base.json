@@ -1,0 +1,100 @@
+{
+  "StateMachines": {
+    "DataRetrieval": {
+      "TestCases": {
+        "HappyPath": {
+          "Trigger Retrieval Lambdas": "MockedTriggerParallel",
+          "Rate Checker": "MockedRateCheckerHappyPath"
+        }
+      }
+    }
+  },
+  "MockedResponses": {
+    "MockedTriggerParallel": {
+      "0": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "listings": ["GOOG", "MSFT", "AMZN", "NFLX", "F"],
+            "queue_empty": false
+          }
+        }
+      },
+      "1": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "listings": ["AMZN", "NFLX", "F"],
+            "queue_empty": false
+          }
+        }
+      },
+      "2": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "listings": ["F"],
+            "queue_empty": false
+          }
+        }
+      },
+      "3": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "listings": [],
+            "queue_empty": true
+          }
+        }
+      }
+    },
+    "MockedRateCheckerHappyPath": {
+      "0": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": false,
+            "listings": []
+          }
+        }
+      },
+      "1": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": false,
+            "listings": ["GOOG", "MSFT", "AMZN", "NFLX", "F"]
+          }
+        }
+      },
+      "2": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": true,
+            "listings": ["AMZN", "NFLX", "F"],
+            "next_day": ""
+          }
+        }
+      },
+      "3": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": false,
+            "listings": ["AMZN", "NFLX", "F"]
+          }
+        }
+      },
+      "4": {
+        "Return": {
+          "StatusCode": 200,
+          "Payload": {
+            "wait": false,
+            "listings": ["F"]
+          }
+        }
+      }
+    }
+  }
+}

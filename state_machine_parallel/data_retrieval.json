@@ -1,0 +1,88 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Rate Checker",
+  "States": {
+    "Rate Checker": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:rate_checker:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Daily Rate Reached"
+    },
+    "Daily Rate Reached": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.wait",
+          "BooleanEquals": false,
+          "Next": "Trigger Retrieval Lambdas"
+        }
+      ],
+      "Default": "Wait Until Next Day"
+    },
+    "Trigger Retrieval Lambdas": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-1:025257542471:function:parallel_trigger:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Queue Empty"
+    },
+    "Queue Empty": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.queue_empty",
+          "BooleanEquals": true,
+          "Next": "Go to end"
+        }
+      ],
+      "Default": "Wait 1 Minute"
+    },
+    "Wait 1 Minute": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "Rate Checker"
+    },
+    "Go to end": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Wait Until Next Day": {
+      "Type": "Wait",
+      "TimestampPath": "$.next_day",
+      "Next": "Rate Checker"
+    }
+  }
+}
