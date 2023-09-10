@@ -1,5 +1,8 @@
 name: Development
 
+permissions:
+    contents: read    # This is required for actions/checkout
+
 on:
     pull_request:
         branches:
