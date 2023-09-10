@@ -6,6 +6,7 @@ import { aws_events as events } from 'aws-cdk-lib';
 import { aws_events_targets as target } from 'aws-cdk-lib';
 import { aws_secretsmanager as secretsmanager } from 'aws-cdk-lib';
 import { RetrievalStateMachine } from './statemachine/retrieval-state-machine';
+import { DockerizedLambda } from './lambda/dockerized-lambda';
 
 export class FrequentRetrievalStack extends Stack {
 
@@ -31,40 +32,38 @@ export class FrequentRetrievalStack extends Stack {
       secretName: "ApiKeys"
     });
 
-    // TODO: use bucket or docker image .fromAsset("")
     // Define the lambda that retrieves tickers
-    const tickersFn = new lambda.Function(this, 'get-tickers-function', {
-      runtime: lambda.Runtime.PYTHON_3_9,
-      handler: 'index.handler',
+    const tickersLambda = new DockerizedLambda(this, 'get-tickers-function', {
+      lambdaId: 'GetTickersLambda',
+      repoName: 'GetTickersLambdaRepo',
       environment: {
         "stateMachineArn": statemachine.stepfunction.stateMachineArn,
         "secretName": secret.secretName
-      },
-      code: lambda.Code.fromInline("def handler(event, context):\n\tprint(\"hello world\")")
-    })
+      }
+    });
 
     // Define the lambda that retrieves individual ticker data
-    this.retrievalFn = new lambda.Function(this, 'get-daily-data-function', {
-      runtime: lambda.Runtime.PYTHON_3_9,
-      handler: 'index.handler',
+    const retrievalLambda = new DockerizedLambda(this, 'get-daily-data-function', {
+      lambdaId: 'GetDailyDataLambda',
+      repoName: 'GetDailyDataLambdaRepo',
       environment: {
         "bucket": bucket.bucketName
-      },
-      code: lambda.Code.fromInline("def handler(event, context):\n\tprint(\"hello world\")")
+      }
     });
+    this.retrievalFn = retrievalLambda.lambdaFn;
 
     // Define the cloudwatch event trigger
     const event = new events.Rule(this, 'get-tickers-trigger', {
       enabled: false, // TODO: enable
       schedule: events.Schedule.cron({minute: "0", hour: "18", weekDay: "1-5"})
     })
-    event.addTarget(new target.LambdaFunction(tickersFn))
+    event.addTarget(new target.LambdaFunction(tickersLambda.lambdaFn))
 
     // Define permissions
-    bucket.grantReadWrite(tickersFn);
+    bucket.grantReadWrite(tickersLambda.lambdaFn);
     bucket.grantReadWrite(this.retrievalFn);
-    statemachine.stepfunction.grantStartExecution(tickersFn);
-    secret.grantRead(tickersFn);
+    statemachine.stepfunction.grantStartExecution(tickersLambda.lambdaFn);
+    secret.grantRead(tickersLambda.lambdaFn);
     secret.grantRead(this.retrievalFn);
   }
 }
