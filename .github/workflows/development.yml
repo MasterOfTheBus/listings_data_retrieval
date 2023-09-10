@@ -1,0 +1,52 @@
+name: Development
+
+on:
+    pull_request:
+        branches:
+            - '*'
+
+jobs:
+    test-app-code:
+        name: Test App Code
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+              package:
+                - get_tickers
+        steps:
+            - name: "checkout repository"
+              uses: actions/checkout@v2
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                python-version: 3.9
+            - name: Unit Test
+              run: |
+                cd lambda/${{ matrix.package }}
+                python -m pip install --upgrade pip
+                if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+                make test
+
+    test-infra-code:
+        name: Test App Code
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+              working-directory: infrastructure
+        steps:
+            - name: "checkout repository"
+              uses: actions/checkout@v2
+            
+            - name: "setup node"
+              uses: actions/setup-node@v2.1.5
+              with:
+                node-version: 16
+      
+            - name: "install npm@latest"
+              run: npm i -g npm@latest
+      
+            - name: "install dependencies"
+              uses: bahmutov/npm-install@v1
+      
+            - name: "run tests"
+              run: npm run test --if-present
