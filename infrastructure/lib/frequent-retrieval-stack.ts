@@ -4,6 +4,7 @@ import { aws_s3 as s3} from 'aws-cdk-lib';
 import { aws_lambda as lambda} from 'aws-cdk-lib';
 import { aws_events as events } from 'aws-cdk-lib';
 import { aws_events_targets as target } from 'aws-cdk-lib';
+import { aws_secretsmanager as secretsmanager } from 'aws-cdk-lib';
 import { RetrievalStateMachine } from './statemachine/retrieval-state-machine';
 
 export class FrequentRetrievalStack extends Stack {
@@ -19,13 +20,25 @@ export class FrequentRetrievalStack extends Stack {
       encryption: s3.BucketEncryption.S3_MANAGED
     });
 
+    // Define the state machine
+    const statemachine = new RetrievalStateMachine(this, "FrequentRetrievalWorkflow", {
+      retrievalFn: this.retrievalFn,
+      stateMachineName: "FrequentRetrievalWorkflow"
+    });
+
+    // Define the secrets manager secret
+    const secret = new secretsmanager.Secret(this, "keysSecrets", {
+      secretName: "ApiKeys"
+    });
+
     // TODO: use bucket or docker image .fromAsset("")
     // Define the lambda that retrieves tickers
     const tickersFn = new lambda.Function(this, 'get-tickers-function', {
       runtime: lambda.Runtime.PYTHON_3_9,
       handler: 'index.handler',
       environment: {
-        "bucket": bucket.bucketName
+        "stateMachineArn": statemachine.stepfunction.stateMachineArn,
+        "secretName": secret.secretName
       },
       code: lambda.Code.fromInline("def handler(event, context):\n\tprint(\"hello world\")")
     })
@@ -47,15 +60,11 @@ export class FrequentRetrievalStack extends Stack {
     })
     event.addTarget(new target.LambdaFunction(tickersFn))
 
-    // Define the state machine
-    const statemachine = new RetrievalStateMachine(this, "FrequentRetrievalWorkflow", {
-      retrievalFn: this.retrievalFn,
-      stateMachineName: "FrequentRetrievalWorkflow"
-    });
-
     // Define permissions
     bucket.grantReadWrite(tickersFn);
     bucket.grantReadWrite(this.retrievalFn);
     statemachine.stepfunction.grantStartExecution(tickersFn);
+    secret.grantRead(tickersFn);
+    secret.grantRead(this.retrievalFn);
   }
 }
