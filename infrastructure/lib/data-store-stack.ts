@@ -25,12 +25,12 @@ export class DataStoreStack extends Stack {
     });
 
     // Grant permissions
-    props.lockTableGrantees.forEach(grantee => {
-      lockTable.grantReadWriteData(grantee);
-    })
+    // props.lockTableGrantees.forEach(grantee => {
+    //   lockTable.grantReadWriteData(grantee);
+    // })
     
-    props.countTableGrantees.forEach(grantee => {
-      countTable.grantReadWriteData(grantee);
-    })
+    // props.countTableGrantees.forEach(grantee => {
+    //   countTable.grantReadWriteData(grantee);
+    // })
   }
 }

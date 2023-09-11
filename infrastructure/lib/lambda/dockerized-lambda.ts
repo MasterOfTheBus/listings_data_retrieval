@@ -24,13 +24,13 @@ export class DockerizedLambda extends Construct {
     });
     repository.addLifecycleRule({ maxImageCount: 2 });
 
-    // Define the Lambda
-    this.lambdaFn = new lambda.Function(this, props.lambdaId, {
-        runtime: lambda.Runtime.PYTHON_3_9,
-        handler: 'index.handler',
-        environment: props.environment,
-        code: lambda.Code.fromEcrImage(repository)
-    });
+    // // Define the Lambda
+    // this.lambdaFn = new lambda.Function(this, props.lambdaId, {
+    //     runtime: lambda.Runtime.PYTHON_3_9,
+    //     handler: 'index.handler',
+    //     environment: props.environment,
+    //     code: lambda.Code.fromEcrImage(repository)
+    // });
     
   }
 }

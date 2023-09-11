@@ -21,11 +21,11 @@ export class FrequentRetrievalStack extends Stack {
       encryption: s3.BucketEncryption.S3_MANAGED
     });
 
-    // Define the state machine
-    const statemachine = new RetrievalStateMachine(this, "FrequentRetrievalWorkflow", {
-      retrievalFn: this.retrievalFn,
-      stateMachineName: "FrequentRetrievalWorkflow"
-    });
+    // // Define the state machine
+    // const statemachine = new RetrievalStateMachine(this, "FrequentRetrievalWorkflow", {
+    //   retrievalFn: this.retrievalFn,
+    //   stateMachineName: "FrequentRetrievalWorkflow"
+    // });
 
     // Define the secrets manager secret
     const secret = new secretsmanager.Secret(this, "keysSecrets", {
@@ -37,7 +37,7 @@ export class FrequentRetrievalStack extends Stack {
       lambdaId: 'GetTickersLambda',
       repoName: 'GetTickersLambdaRepo',
       environment: {
-        "stateMachineArn": statemachine.stepfunction.stateMachineArn,
+        // "stateMachineArn": statemachine.stepfunction.stateMachineArn,
         "secretName": secret.secretName
       }
     });
@@ -52,18 +52,18 @@ export class FrequentRetrievalStack extends Stack {
     });
     this.retrievalFn = retrievalLambda.lambdaFn;
 
-    // Define the cloudwatch event trigger
-    const event = new events.Rule(this, 'get-tickers-trigger', {
-      enabled: false, // TODO: enable
-      schedule: events.Schedule.cron({minute: "0", hour: "18", weekDay: "1-5"})
-    })
-    event.addTarget(new target.LambdaFunction(tickersLambda.lambdaFn))
+    // // Define the cloudwatch event trigger
+    // const event = new events.Rule(this, 'get-tickers-trigger', {
+    //   enabled: false, // TODO: enable
+    //   schedule: events.Schedule.cron({minute: "0", hour: "18", weekDay: "1-5"})
+    // })
+    // event.addTarget(new target.LambdaFunction(tickersLambda.lambdaFn))
 
     // Define permissions
-    bucket.grantReadWrite(tickersLambda.lambdaFn);
-    bucket.grantReadWrite(this.retrievalFn);
-    statemachine.stepfunction.grantStartExecution(tickersLambda.lambdaFn);
-    secret.grantRead(tickersLambda.lambdaFn);
-    secret.grantRead(this.retrievalFn);
+    // bucket.grantReadWrite(tickersLambda.lambdaFn);
+    // bucket.grantReadWrite(this.retrievalFn);
+    // statemachine.stepfunction.grantStartExecution(tickersLambda.lambdaFn);
+    // secret.grantRead(tickersLambda.lambdaFn);
+    // secret.grantRead(this.retrievalFn);
   }
 }
