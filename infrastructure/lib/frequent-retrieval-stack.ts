@@ -10,7 +10,7 @@ import { DockerizedLambda } from './lambda/dockerized-lambda';
 
 export class FrequentRetrievalStack extends Stack {
 
-  public retrievalFn: lambda.Function;
+  // public retrievalFn: lambda.Function;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -50,7 +50,7 @@ export class FrequentRetrievalStack extends Stack {
         "bucket": bucket.bucketName
       }
     });
-    this.retrievalFn = retrievalLambda.lambdaFn;
+    // this.retrievalFn = retrievalLambda.lambdaFn;
 
     // // Define the cloudwatch event trigger
     // const event = new events.Rule(this, 'get-tickers-trigger', {

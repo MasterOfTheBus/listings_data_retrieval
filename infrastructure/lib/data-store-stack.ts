@@ -4,12 +4,12 @@ import { aws_dynamodb as ddb } from 'aws-cdk-lib';
 import { IGrantable } from 'aws-cdk-lib/aws-iam';
 
 export interface DataStoreStackProps extends StackProps {
-  lockTableGrantees: [IGrantable];
-  countTableGrantees: [IGrantable];
+  // lockTableGrantees: [IGrantable];
+  // countTableGrantees: [IGrantable];
 }
 
 export class DataStoreStack extends Stack {
-  constructor(scope: Construct, id: string, props: DataStoreStackProps) {
+  constructor(scope: Construct, id: string, props?: DataStoreStackProps) {
     super(scope, id, props);
 
     // Define the ddb table for the distributed locking
