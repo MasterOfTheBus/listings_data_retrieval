@@ -11,7 +11,7 @@ export interface DockerizedLambdaProps {
 
 export class DockerizedLambda extends Construct {
 
-  public lambdaFn: lambda.Function;
+  // public lambdaFn: lambda.Function;
 
   constructor(scope: Construct, id: string, props: DockerizedLambdaProps) {
     super(scope, id);

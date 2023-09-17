@@ -20,9 +20,11 @@ const frequentRetrievalStack = new FrequentRetrievalStack(app, 'InfrastructureSt
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
-const dataStoreStack = new DataStoreStack(app, "DataStoreStack", {
-  lockTableGrantees: [frequentRetrievalStack.retrievalFn],
-  countTableGrantees: [frequentRetrievalStack.retrievalFn]
-});
+const dataStoreStack = new DataStoreStack(app, "DataStoreStack"
+// ,{
+//   lockTableGrantees: [frequentRetrievalStack.retrievalFn],
+//   countTableGrantees: [frequentRetrievalStack.retrievalFn]
+// }
+);
 
 app.synth();
