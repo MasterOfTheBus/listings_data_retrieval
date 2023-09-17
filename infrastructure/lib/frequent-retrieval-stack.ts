@@ -35,7 +35,7 @@ export class FrequentRetrievalStack extends Stack {
     // Define the lambda that retrieves tickers
     const tickersLambda = new DockerizedLambda(this, 'get-tickers-function', {
       lambdaId: 'GetTickersLambda',
-      repoName: 'GetTickersLambdaRepo',
+      repoName: 'get-tickers-lambda-ecr-repo',
       environment: {
         // "stateMachineArn": statemachine.stepfunction.stateMachineArn,
         "secretName": secret.secretName
@@ -45,7 +45,7 @@ export class FrequentRetrievalStack extends Stack {
     // Define the lambda that retrieves individual ticker data
     const retrievalLambda = new DockerizedLambda(this, 'get-daily-data-function', {
       lambdaId: 'GetDailyDataLambda',
-      repoName: 'GetDailyDataLambdaRepo',
+      repoName: 'get-daily-data-lambda-repo',
       environment: {
         "bucket": bucket.bucketName
       }
